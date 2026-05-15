@@ -66,7 +66,7 @@
 </div>
 
 ---
-
+### IF YOU ARE LAZY JUST PLAY IT [HERE](https://ts-dev-debug-v2.github.io/rustyboy/web/)
 ## Features
 
 - **Accurate DMG Emulation** - Sharp LR35902 CPU with full instruction set and cycle-accurate timing
