@@ -80,7 +80,7 @@
 
 ---
 
-## Building
+## Building (NOTE: these might need more setting up on your machine)
 
 ### Windows (Native)
 
