@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>rustyboy - Game Boy emulator in Rust</title>
+<style>
+  :root {
+    --bg: #0b0d10;
+    --panel: #14181d;
+    --panel-2: #1a2027;
+    --line: #232a33;
+    --fg: #e6edf3;
+    --fg-dim: #93a1b1;
+    --accent: #7ee787;
+    --accent-2: #58a6ff;
+    --shadow: 0 10px 40px rgba(0,0,0,.5);
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: radial-gradient(ellipse at top, #161b22 0%, var(--bg) 50%);
+    color: var(--fg);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  .app {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 16px;
+    gap: 12px;
+  }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand h1 {
+    margin: 0; font-size: 20px; font-weight: 600;
+    letter-spacing: .5px;
+    color: var(--fg);
+  }
+  .brand .tag {
+    color: var(--fg-dim); font-size: 12px;
+    font-family: var(--mono);
+  }
+  .actions { display: flex; gap: 8px; align-items: center; }
+  button, label.btn {
+    appearance: none;
+    background: var(--panel-2);
+    color: var(--fg);
+    border: 1px solid var(--line);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: var(--sans);
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+  }
+  button:hover, label.btn:hover { background: #222a34; border-color: #2f3742; }
+  button.primary { background: var(--accent); color: #0b0d10; border-color: var(--accent); font-weight: 600; }
+  button.primary:hover { background: #5dd66c; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  input[type=file] { display: none; }
+
+  main {
+    display: flex; flex-direction: column;
+    align-items: stretch; justify-content: stretch;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    min-height: 0;
+    position: relative;
+  }
+  .screen-wrap {
+    display: flex; align-items: center; justify-content: center;
+    width: 100%; height: 100%;
+    padding: 0;
+  }
+  canvas#canvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    background: #c4cfa1;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    outline: none;
+  }
+  .splash {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 18px; padding: 24px; text-align: center;
+    background: var(--panel);
+    z-index: 5;
+  }
+  .splash h2 { margin: 0; font-weight: 500; color: var(--fg); font-size: 18px; }
+  .splash .hint { color: var(--fg-dim); font-size: 13px; max-width: 360px; line-height: 1.5; }
+  .builtin-row {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    max-width: 540px;
+  }
+  .builtin-row button {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  .builtin-row button.unavailable {
+    opacity: .45;
+    cursor: not-allowed;
+  }
+  .divider {
+    width: 100%; max-width: 320px;
+    border: 0; border-top: 1px solid var(--line);
+    margin: 4px 0;
+  }
+  .status {
+    font-family: var(--mono); font-size: 12px;
+    color: var(--fg-dim);
+    margin-top: 4px;
+    white-space: pre;
+    min-height: 16px;
+  }
+
+  footer {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    color: var(--fg-dim);
+    font-size: 12px;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+  }
+  .controls { font-family: var(--mono); }
+  .controls kbd {
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-bottom-width: 2px;
+    border-radius: 3px;
+    padding: 1px 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--fg);
+    margin: 0 1px;
+  }
+  .meta { text-align: right; }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 640px) {
+    .actions .secondary-action { display: none; }
+    footer { grid-template-columns: 1fr; }
+    .meta { text-align: left; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <h1>rustyboy</h1>
+      <span class="tag">// Game Boy DMG emulator / Rust + SDL2 + WebAssembly</span>
+    </div>
+    <div class="actions">
+      <label class="btn" for="rom-input">Load ROM...</label>
+      <input id="rom-input" type="file" accept=".gb,.gbc,.bin">
+      <button id="reset-btn" class="secondary-action" disabled>Reset</button>
+      <button id="fullscreen-btn" class="secondary-action" disabled>Fullscreen</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="screen-wrap">
+      <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+    </div>
+    <div class="splash" id="splash">
+      <h2>Choose a built-in ROM</h2>
+      <div class="builtin-row" id="builtin-row">
+        <!-- buttons inserted by script -->
+      </div>
+      <hr class="divider">
+      <div class="hint">...or click <strong>Load ROM</strong> above, or drag a .gb file onto this window.</div>
+      <div class="status" id="status">Loading runtime...</div>
+    </div>
+  </main>
+
+  <footer>
+    <div class="controls">
+      <kbd>Arrows</kbd> D-Pad &nbsp; <kbd>Z</kbd> A &nbsp; <kbd>X</kbd> B &nbsp;
+      <kbd>Enter</kbd> Start &nbsp; <kbd>Shift</kbd> Select &nbsp; <kbd>Esc</kbd> Quit
+    </div>
+    <div class="meta">Saves persist to <code>localStorage</code></div>
+  </footer>
+</div>
+
+<script type="text/javascript">
+  const BUILTIN_ROMS = [
+    { label: "Pokemon Red",      file: "red.gb" },
+    { label: "Pokemon Blue",     file: "blue.gb" },
+    { label: "Pokemon Yellow",   file: "yellow.gb" },
+    { label: "Tetris",           file: "tetris.gb" },
+    { label: "Legend of Zelda Link's Awakening",   file: "zelda.gb" },
+    { label: "Super Mario Land", file: "mario.gb" },
+  ];
+
+  const splash = document.getElementById('splash');
+  const status = document.getElementById('status');
+  const resetBtn = document.getElementById('reset-btn');
+  const fsBtn = document.getElementById('fullscreen-btn');
+  const romInput = document.getElementById('rom-input');
+  const canvas = document.getElementById('canvas');
+  const builtinRow = document.getElementById('builtin-row');
+
+  let currentRomName = null;
+
+  function setStatus(msg) {
+    if (status) status.textContent = msg;
+    console.log('[rustyboy]', msg);
+  }
+
+  function bootWithRom(bytes, name) {
+    currentRomName = name || 'rom.gb';
+    setStatus('Loaded ' + currentRomName + ' (' + bytes.length + ' bytes). Starting...');
+    try {
+      const path = '/rom.gb';
+      Module.FS.writeFile(path, bytes);
+      const key = 'rustyboy_save:' + currentRomName;
+      try {
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          const bin = atob(saved);
+          const buf = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+          Module.FS.writeFile('/save.sav', buf);
+        }
+      } catch (e) { console.warn('save load failed', e); }
+      splash.classList.add('hidden');
+      resetBtn.disabled = false;
+      fsBtn.disabled = false;
+      canvas.focus();
+      Module._main_started = true;
+      Module.callMain([path, '/save.sav', key]);
+    } catch (e) {
+      setStatus('Failed to start: ' + e);
+      console.error(e);
+    }
+  }
+
+  function loadBuiltin(file, label) {
+    setStatus('Fetching roms/' + file + '...');
+    fetch('roms/' + file)
+      .then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.arrayBuffer();
+      })
+      .then(buf => bootWithRom(new Uint8Array(buf), file))
+      .catch(e => {
+        setStatus('Failed to load ' + file + ': ' + e.message);
+      });
+  }
+
+  function renderBuiltins() {
+    builtinRow.innerHTML = '';
+    BUILTIN_ROMS.forEach(rom => {
+      const b = document.createElement('button');
+      b.textContent = rom.label;
+      b.dataset.file = rom.file;
+      b.addEventListener('click', () => {
+        if (b.classList.contains('unavailable')) {
+          setStatus('roms/' + rom.file + ' dev is dumb and needs to add the rom sorry');
+          return;
+        }
+        loadBuiltin(rom.file, rom.label);
+      });
+      builtinRow.appendChild(b);
+    });
+    // Probe each file; gray out missing ones. cuz im lazy to add all somtimes
+    BUILTIN_ROMS.forEach(rom => {
+      fetch('roms/' + rom.file, { method: 'HEAD' })
+        .then(r => {
+          if (!r.ok) {
+            const btn = builtinRow.querySelector('button[data-file="' + rom.file + '"]');
+            if (btn) { btn.classList.add('unavailable'); btn.title = 'File not found in /roms/'; }
+          }
+        })
+        .catch(() => {
+          const btn = builtinRow.querySelector('button[data-file="' + rom.file + '"]');
+          if (btn) { btn.classList.add('unavailable'); btn.title = 'File not found in /roms/'; }
+        });
+    });
+  }
+
+  romInput.addEventListener('change', (ev) => {
+    const f = ev.target.files && ev.target.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      const bytes = new Uint8Array(r.result);
+      if (Module._main_started) {
+        location.reload();
+        return;
+      }
+      bootWithRom(bytes, f.name);
+    };
+    r.readAsArrayBuffer(f);
+  });
+
+  ['dragenter','dragover'].forEach(t =>
+    window.addEventListener(t, e => { e.preventDefault(); e.stopPropagation(); }));
+  window.addEventListener('drop', e => {
+    e.preventDefault(); e.stopPropagation();
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => bootWithRom(new Uint8Array(r.result), f.name);
+    r.readAsArrayBuffer(f);
+  });
+
+  resetBtn.addEventListener('click', () => location.reload());
+  fsBtn.addEventListener('click', () => {
+    if (canvas.requestFullscreen) canvas.requestFullscreen();
+  });
+
+  var Module = {
+    canvas: canvas,
+    noInitialRun: true,
+    _main_started: false,
+    printErr: function (text) { console.warn(text); },
+    print: function (text) { console.log(text); },
+    onRuntimeInitialized: function () {
+      setStatus('Runtime ready. Pick a ROM to begin.');
+      renderBuiltins();
+    },
+    onAbort: function (reason) {
+      setStatus('Aborted: ' + reason);
+    },
+    locateFile: function (path) { return path; },
+  };
+
+  canvas.addEventListener('click', () => canvas.focus());
+</script>
+
+<script async src="rustyboy.js"></script>
+</body>
+</html>
