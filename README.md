@@ -74,11 +74,9 @@
 - **Audio Processing Unit** — All four sound channels emulated (pulse, wave, noise)
 - **Memory Bank Controllers** — Support for ROM Only, MBC1, MBC2, MBC3, and MBC5 cartridge types
 - **Battery Saves** — Persistent save RAM for supported cartridges
-- **Save States** — Snapshot and restore emulator state at any point
-- **Joypad Input** — Full keyboard-mapped Game Boy controls
-- **Timer & Interrupts** — Accurate timer divider and interrupt handling
-- **Windows Native Build** — Standalone desktop executable via Cargo
-- **Web Build via Emscripten** — Play directly in the browser through WebAssembly
+- **Timer & Interrupts** - Accurate timer divider and interrupt handling
+- **Windows Native Build** - Standalone desktop executable via Cargo
+- **Web Build via Emscripten** - Play directly in the browser through WebAssembly
 
 ---
 
