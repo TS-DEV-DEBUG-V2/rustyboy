@@ -110,7 +110,7 @@ cargo build --release --target wasm32-unknown-emscripten
 
 ## Development
 
-Contributions are welcome — feel free to open issues or submit pull requests.
+Contributions are welcome - feel free to open issues or submit pull requests.
 
 ![Alt](https://repobeats.axiom.co/api/embed/3e621f3cf8b5c7a9a867575a933155a56335d6b4.svg "Repobeats analytics image")
 
