@@ -57,8 +57,6 @@
 ![Timer](https://img.shields.io/badge/timer-emulated-blue?style=flat-square)
 ![Interrupts](https://img.shields.io/badge/interrupts-emulated-blue?style=flat-square)
 ![Joypad](https://img.shields.io/badge/joypad-emulated-blue?style=flat-square)
-![Serial](https://img.shields.io/badge/serial-stubbed-lightgrey?style=flat-square)
-![Save States](https://img.shields.io/badge/save_states-supported-brightgreen?style=flat-square)
 ![Battery Saves](https://img.shields.io/badge/battery_saves-supported-brightgreen?style=flat-square)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square)
 ![Made with Love](https://img.shields.io/badge/made_with-❤️-red?style=flat-square)
