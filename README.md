@@ -69,11 +69,11 @@
 
 ## Features
 
-- **Accurate DMG Emulation** — Sharp LR35902 CPU with full instruction set and cycle-accurate timing
-- **Complete PPU** — Background, window, and sprite rendering at native 160×144 resolution
-- **Audio Processing Unit** — All four sound channels emulated (pulse, wave, noise)
-- **Memory Bank Controllers** — Support for ROM Only, MBC1, MBC2, MBC3, and MBC5 cartridge types
-- **Battery Saves** — Persistent save RAM for supported cartridges
+- **Accurate DMG Emulation** - Sharp LR35902 CPU with full instruction set and cycle-accurate timing
+- **Complete PPU** - Background, window, and sprite rendering at native 160×144 resolution
+- **Audio Processing Unit** - All four sound channels emulated (pulse, wave, noise)
+- **Memory Bank Controllers** - Support for ROM Only, MBC1, MBC2, MBC3, and MBC5 cartridge types
+- **Battery Saves** - Persistent save RAM for supported cartridges
 - **Timer & Interrupts** - Accurate timer divider and interrupt handling
 - **Windows Native Build** - Standalone desktop executable via Cargo
 - **Web Build via Emscripten** - Play directly in the browser through WebAssembly
